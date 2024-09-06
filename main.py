@@ -8,13 +8,18 @@ import logging
 import json
 import zipfile
 
-from adobe.pdfservices.operation.auth.credentials import ServicePrincipalCredentials
-from adobe.pdfservices.operation.pdfops.extractpdf.extract_pdf_params import ExtractPDFParams, ExtractElementType
-from adobe.pdfservices.operation.pdfops.extractpdf.extract_pdf_result import ExtractPDFResult
-from adobe.pdfservices.operation.io.file_ref import FileRef
-from adobe.pdfservices.operation.pdfservices_client import PDFServices
-from adobe.pdfservices.exception.service_api_exception import ServiceApiException
-from adobe.pdfservices.exception.sdk_exception import SdkException
+from adobe.pdfservices.operation.auth.service_principal_credentials import ServicePrincipalCredentials
+from adobe.pdfservices.operation.exception.exceptions import ServiceApiException, ServiceUsageException, SdkException
+from adobe.pdfservices.operation.io.cloud_asset import CloudAsset
+from adobe.pdfservices.operation.io.stream_asset import StreamAsset
+from adobe.pdfservices.operation.pdf_services import PDFServices
+from adobe.pdfservices.operation.pdf_services_media_type import PDFServicesMediaType
+
+from adobe.pdfservices.operation.pdf_services_media_type import PDFServicesMediaType
+from adobe.pdfservices.operation.pdfjobs.jobs.extract_pdf_job import ExtractPDFJob
+from adobe.pdfservices.operation.pdfjobs.params.extract_pdf.extract_element_type import ExtractElementType
+from adobe.pdfservices.operation.pdfjobs.params.extract_pdf.extract_pdf_params import ExtractPDFParams
+from adobe.pdfservices.operation.pdfjobs.result.extract_pdf_result import ExtractPDFResult
 
 
 app = FastAPI()
