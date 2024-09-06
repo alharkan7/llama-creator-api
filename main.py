@@ -63,28 +63,28 @@ def process_text(extracted_text: str) -> str:
     api_key=os.getenv("GROQ_API_KEY"),
     )
 
-    completion = client.chat.completions.create(
-        model="llama3-8b-8192",
-        messages=[
-            {
-                "role": "user",
-                "content": f"""
-                I have a scientific paper that has been extracted from a PDF using PyPDF2. It is messy, so you must clean it up and make it readable.
-                Remove all markdown formatting like "\\", "\n", "\t", etc. Overall, you must make it readable and remove all the formatting if I read it on txt file.
-                Here is the text of the scientific paper: {extracted_text}
-                """
-            }
-        ],
-        temperature=1,
-        max_tokens=8000,
-        top_p=1,
-        stream=True,
-        stop=None,
-    )
+    # Replace multiple newlines with one newline to avoid broken paragraphs
+    extracted_text = re.sub(r'\n+', '\n', extracted_text)
+    
+    # Remove spaces around newlines (from markdown-style bullets, etc.)
+    extracted_text = re.sub(r' \n', '\n', extracted_text)
+    extracted_text = re.sub(r'\n ', '\n', extracted_text)
 
-    cleanup_text = ""
-    for chunk in completion:
-        cleanup_text += chunk.choices[0].delta.content or ""
+    # Remove common markdown-like artifacts (like '*' or '•')
+    extracted_text = re.sub(r'[*•]', '', extracted_text)
+
+    # Remove double spaces and tabs
+    extracted_text = re.sub(r'\t+', ' ', extracted_text)
+    extracted_text = re.sub(r' +', ' ', extracted_text)
+
+    # Handle word hyphenation at the end of lines (e.g., "exam-\nple" -> "example")
+    extracted_text = re.sub(r'(\w+)-\n(\w+)', r'\1\2', extracted_text)
+
+    # Remove any excessive newlines for readability (e.g., collapse multiple empty lines)
+    extracted_text = re.sub(r'\n{2,}', '\n\n', extracted_text)
+
+    # Strip leading and trailing whitespaces from the final text
+    extracted_text = extracted_text.strip()
 
     completion = client.chat.completions.create(
         model="llama3-8b-8192",
@@ -108,7 +108,7 @@ def process_text(extracted_text: str) -> str:
                 Make sure each chunk is concise and suitable for a non-scientific audience. Use simple language and keep each chunk to no more than two sentences.
                 You must return all the text in readable format, no markdown, no code, no special characters.
                 You MUST only return the output in JSON format with the following template:
-                {
+                
                     "hook": "...",
                     "question": "...",
                     "researcher": "...",
@@ -116,9 +116,8 @@ def process_text(extracted_text: str) -> str:
                     "findings": "...",
                     "implications": "...",
                     "closing": "..."
-                }
-                
-                Here is the text of the scientific paper: {cleanup_text}
+                                
+                Here is the text of the scientific paper: {extracted_text}
 
                 I repeat. Only return in JSON format, no intro like "Here is the output" or "Here is the answer" or anything like that.               
                 """
