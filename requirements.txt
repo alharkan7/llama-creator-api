@@ -2,4 +2,4 @@ fastapi
 uvicorn
 python-multipart
 requests
-git+https://github.com/adobe/pdfservices-python-sdk.git
+pdfminer
