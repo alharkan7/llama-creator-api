@@ -30,13 +30,11 @@ async def upload_pdf(file: UploadFile = File(...)):
         return JSONResponse(status_code=400, content={"message": "Only PDF files are allowed."})
 
     try:
-        # Save the uploaded PDF to disk
-        pdf_file_path = f"/tmp/{file.filename}"
-        with open(pdf_file_path, "wb") as f:
-            f.write(await file.read())
+        # Read the uploaded PDF file into memory
+        pdf_file_content = await file.read()
 
         # Call Adobe PDF API to extract text
-        extracted_text = extract_text_from_pdf(pdf_file_path)
+        extracted_text = extract_text_from_pdf(pdf_file_content)
 
         # Return extracted text in response
         return {"filename": file.filename, "extracted_text": extracted_text}
@@ -46,7 +44,7 @@ async def upload_pdf(file: UploadFile = File(...)):
         return JSONResponse(status_code=500, content={"message": "Failed to extract text from the PDF.", "error": str(e)})  # Include error details
 
 
-def extract_text_from_pdf(pdf_file_path: str) -> str:
+def extract_text_from_pdf(pdf_file_content: bytes) -> str:
     try:
         # Create Adobe PDF Services credentials
         credentials = ServicePrincipalCredentials(
@@ -57,8 +55,8 @@ def extract_text_from_pdf(pdf_file_path: str) -> str:
         # Initialize the Adobe PDF Services client
         pdf_services = PDFServices(credentials=credentials)
 
-        # Create input asset from the PDF file
-        input_asset = pdf_services.upload(input_stream=open(pdf_file_path, 'rb').read(), mime_type='application/pdf')
+        # Create input asset from the PDF file content
+        input_asset = pdf_services.upload(input_stream=pdf_file_content, mime_type='application/pdf')
 
         # Set up extract parameters to extract text
         extract_pdf_params = ExtractPDFParams(
