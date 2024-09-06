@@ -20,7 +20,7 @@ from adobe.pdfservices.exception.sdk_exception import SdkException
 app = FastAPI()
 
 @app.post("/upload-pdf/")
-aasync def upload_pdf(file: UploadFile = File(...)):
+async def upload_pdf(file: UploadFile = File(...)):
     if file.content_type != "application/pdf":
         return JSONResponse(status_code=400, content={"message": "Only PDF files are allowed."})
 
@@ -86,6 +86,6 @@ def extract_text_from_pdf(pdf_file_path: str) -> str:
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-    
+
 # Command to run
 # uvicorn main:app --reload
