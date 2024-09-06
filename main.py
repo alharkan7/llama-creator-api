@@ -32,8 +32,8 @@ async def upload_pdf(file: UploadFile = File(...)):
         processed_text = process_text(extracted_text)
 
         # Return extracted text in response
-        # return {"filename": file.filename, "processed_text": processed_text}
-        return {"filename": file.filename, "processed_text": extracted_text}
+        return {"filename": file.filename, "processed_text": processed_text}
+        # return {"filename": file.filename, "processed_text": extracted_text}
 
     except Exception as e:
         logging.exception(f"Error processing the PDF file: {e}")  # Enhanced logging
