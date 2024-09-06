@@ -42,8 +42,8 @@ async def upload_pdf(file: UploadFile = File(...)):
         return {"filename": file.filename, "extracted_text": extracted_text}
 
     except Exception as e:
-        logging.exception(f"Error processing the PDF file: {e}")
-        return JSONResponse(status_code=500, content={"message": "Failed to extract text from the PDF."})
+        logging.exception(f"Error processing the PDF file: {e}")  # Enhanced logging
+        return JSONResponse(status_code=500, content={"message": "Failed to extract text from the PDF.", "error": str(e)})  # Include error details
 
 
 def extract_text_from_pdf(pdf_file_path: str) -> str:
