@@ -64,7 +64,7 @@ def extract_text_from_pdf(pdf_file_content: bytes) -> str:
         )
 
         # Create and submit the extraction job
-        extract_pdf_job = pdf_services.submit_job(input_asset=input_asset, extract_pdf_params=extract_pdf_params)
+        extract_pdf_job = ExtractPDFJob(input_asset=input_asset, extract_pdf_params=extract_pdf_params)
         pdf_services_response = pdf_services.get_job_result(extract_pdf_job)
 
         # Extract the resulting content
