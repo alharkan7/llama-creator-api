@@ -83,16 +83,20 @@ def process_text(extracted_text: str) -> str:
                 
                 Make sure each chunk is concise and suitable for a non-scientific audience. Use simple language and keep each chunk to no more than two sentences.
                 You must return all the text in readable format, no markdown, no code, no special characters.
-                ou MUST only return the output in JSON format, no intro, with the following keys:
-                - hook
-                - question
-                - researcher
-                - method
-                - findings
-                - implications
-                - closing
+                You MUST only return the output in JSON format with the following template:
+                {
+                    "hook": "...",
+                    "question": "...",
+                    "researcher": "...",
+                    "method": "...",
+                    "findings": "...",
+                    "implications": "...",
+                    "closing": "..."
+                }
                 
-                Here is the text of the scientific paper: {extracted_text}                
+                Here is the text of the scientific paper: {extracted_text}
+
+                I repeat. Only return in JSON format, no intro like "Here is the output" or "Here is the answer" or anything like that.               
                 """
             }
         ],
