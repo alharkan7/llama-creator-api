@@ -68,6 +68,29 @@ def process_text(extracted_text: str) -> str:
             {
                 "role": "user",
                 "content": f"""
+                I have a scientific paper that has been extracted from a PDF using PyPDF2. It is messy, so you must clean it up and make it readable.
+                Remove all markdown formatting like "\\", "\n", "\t", etc. Overall, you must make it readable and remove all the formatting if I read it on txt file.
+                Here is the text of the scientific paper: {extracted_text}
+                """
+            }
+        ],
+        temperature=1,
+        max_tokens=8000,
+        top_p=1,
+        stream=True,
+        stop=None,
+    )
+
+    cleanup_text = ""
+    for chunk in completion:
+        cleanup_text += chunk.choices[0].delta.content or ""
+
+    completion = client.chat.completions.create(
+        model="llama3-8b-8192",
+        messages=[
+            {
+                "role": "user",
+                "content": f"""
                 I have a scientific paper that has been extracted from a PDF using PyPDF2. It is a bit messy, so you must clean it up and make it readable.
                 Then I want to turn it into a series of engaging, easy-to-understand text chunks for a layman audience on social media.
                 Each chunk should be brief and suitable for being read on a card that people can swipe through, like on TikTok.
@@ -94,7 +117,7 @@ def process_text(extracted_text: str) -> str:
                     "closing": "..."
                 }
                 
-                Here is the text of the scientific paper: {extracted_text}
+                Here is the text of the scientific paper: {cleanup_text}
 
                 I repeat. Only return in JSON format, no intro like "Here is the output" or "Here is the answer" or anything like that.               
                 """
