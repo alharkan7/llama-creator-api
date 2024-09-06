@@ -2,4 +2,4 @@ fastapi
 uvicorn
 python-multipart
 requests
-adobe-pdf-services-sdk
+git+https://github.com/adobe/pdfservices-python-sdk.git
