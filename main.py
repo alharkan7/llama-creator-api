@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 
 import os
 from datetime import datetime
+import io
 
 import logging
 import json
@@ -74,10 +75,14 @@ def extract_text_from_pdf(pdf_file_content: bytes) -> str:
         result_asset: CloudAsset = pdf_services_response.get_result().get_resource()
         stream_asset: StreamAsset = pdf_services.get_content(result_asset)
 
+         # Create a file-like object from the byte content
+        input_stream = io.BytesIO(stream_asset.get_input_stream().read())  # Use BytesIO to create a file-like object
+
+
         # Extract JSON content from the zip file response
-        with zipfile.ZipFile(stream_asset.get_input_stream(), 'r') as archive:
+        with zipfile.ZipFile(input_stream, 'r') as archive:
             json_entry = archive.open('structuredData.json')
-            json_data = json.loads(json_entry.read())
+            json_data = json.loads(json_entry.read())Re
 
         # Extract and return text elements from the JSON data
         extracted_text = "\n".join([element['Text'] for element in json_data["elements"] if "Text" in element])
