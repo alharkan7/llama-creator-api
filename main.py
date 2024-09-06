@@ -9,10 +9,7 @@ import logging
 import json
 import zipfile
 
-from pdfminer.pdfparser import PDFParser
-from pdfminer.pdfdocument import PDFDocument
-from pdfminer.pdfpage import PDFPage
-from pdfminer.pdfpagecontent import PDFPageContent
+import PyPDF2
 
 
 app = FastAPI()
@@ -42,20 +39,20 @@ def extract_text_from_pdf(pdf_file_content: bytes) -> str:
         input_stream = io.BytesIO(pdf_file_content)
 
         # Parse the PDF document
-        parser = PDFParser(input_stream)
-        document = PDFDocument(parser)
+        pdf_reader = PyPDF2.PdfReader(input_stream)
 
         # Extract text from each page
         extracted_text = ""
-        for page in document.get_pages():
-            content = PDFPageContent.create_content(page)
-            extracted_text += content.get_text()
+        for page_num in range(len(pdf_reader.pages)):
+            page = pdf_reader.pages[page_num]
+            extracted_text += page.extract_text()
 
         return extracted_text
 
     except Exception as e:
         logging.exception(f'Error while extracting text from PDF: {e}')
         raise Exception("Error extracting text from PDF")
+
 
 
 if __name__ == "__main__":
