@@ -58,18 +58,21 @@ def extract_text_from_pdf(pdf_file_content: bytes) -> str:
         # Create input asset from the PDF file content
         input_asset = pdf_services.upload(input_stream=pdf_file_content, mime_type='application/pdf')
 
-        # Set up extract parameters to extract text
+        # Create parameters for the job
         extract_pdf_params = ExtractPDFParams(
             elements_to_extract=[ExtractElementType.TEXT],
         )
 
-        # Create and submit the extraction job
+        # Creates a new job instance
         extract_pdf_job = ExtractPDFJob(input_asset=input_asset, extract_pdf_params=extract_pdf_params)
-        pdf_services_response = pdf_services.get_job_result(extract_pdf_job)
 
-        # Extract the resulting content
-        result_asset = pdf_services_response.get_result().get_resource()
-        stream_asset = pdf_services.get_content(result_asset)
+        # Submit the job and gets the job result
+        location = pdf_services.submit(extract_pdf_job)
+        pdf_services_response = pdf_services.get_job_result(location, ExtractPDFResult)
+
+        # Get content from the resulting asset(s)
+        result_asset: CloudAsset = pdf_services_response.get_result().get_resource()
+        stream_asset: StreamAsset = pdf_services.get_content(result_asset)
 
         # Extract JSON content from the zip file response
         with zipfile.ZipFile(stream_asset.get_input_stream(), 'r') as archive:
