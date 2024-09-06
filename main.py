@@ -82,7 +82,7 @@ def extract_text_from_pdf(pdf_file_content: bytes) -> str:
         # Extract JSON content from the zip file response
         with zipfile.ZipFile(input_stream, 'r') as archive:
             json_entry = archive.open('structuredData.json')
-            json_data = json.loads(json_entry.read())Re
+            json_data = json.loads(json_entry.read())
 
         # Extract and return text elements from the JSON data
         extracted_text = "\n".join([element['Text'] for element in json_data["elements"] if "Text" in element])
