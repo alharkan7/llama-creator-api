@@ -59,7 +59,7 @@ def extract_text_from_pdf(pdf_file_content: bytes) -> str:
 
 def process_text(extracted_text: str) -> str:
     client = Groq(
-    api_key=getenv("GROQ_API_KEY"),
+    api_key=os.getenv("GROQ_API_KEY"),
     )
 
     completion = client.chat.completions.create(
@@ -85,7 +85,7 @@ def process_text(extracted_text: str) -> str:
                 Don't give intro in your answer. Just the output in JSON format with the following keys:
                 - hook
                 - question
-                - researcher_institution
+                - researcher
                 - method
                 - findings
                 - implications
