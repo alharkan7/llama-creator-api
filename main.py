@@ -82,7 +82,8 @@ def process_text(extracted_text: str) -> str:
                 - Engagement Bait: End with a question or a call to action to encourage audience engagement, such as commenting their thoughts, sharing the content, or asking questions.
                 
                 Make sure each chunk is concise and suitable for a non-scientific audience. Use simple language and keep each chunk to no more than two sentences.
-                Don't give intro in your answer. Just the output in JSON format with the following keys:
+                You must return all the text in readable format, no markdown, no code, no special characters.
+                ou MUST only return the output in JSON format, no intro, with the following keys:
                 - hook
                 - question
                 - researcher
@@ -90,7 +91,8 @@ def process_text(extracted_text: str) -> str:
                 - findings
                 - implications
                 - closing
-                Here is the text of the scientific paper: {extracted_text}
+                
+                Here is the text of the scientific paper: {extracted_text}                
                 """
             }
         ],
