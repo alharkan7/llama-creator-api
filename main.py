@@ -8,6 +8,7 @@ import io
 import logging
 import json
 import zipfile
+import re
 
 import PyPDF2
 from groq import Groq
