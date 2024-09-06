@@ -1,3 +1,6 @@
 fastapi
 uvicorn
 python-multipart
+requests
+zipfile
+adobe-pdf-services-sdk
