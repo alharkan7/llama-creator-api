@@ -170,7 +170,7 @@ def process_text(cleaned_text: str) -> str:
     )
 
     completion = client.chat.completions.create(
-        model="llama3-8b-8192",
+        model="llama-3.1-70b-versatile",
         messages=[
             {
                 "role": "user",
@@ -207,7 +207,7 @@ def process_text(cleaned_text: str) -> str:
             }
         ],
         temperature=1,
-        max_tokens=8000,
+        max_tokens=15000,
         top_p=1,
         stream=True,
         stop=None,
