@@ -28,8 +28,11 @@ async def upload_pdf(
     pdf_file: Optional[UploadFile] = File(None), 
     pdf_url: Optional[str] = Form(None)
 ):
-    
-    # Check if a file was uploaded
+    # Check if either a file or a URL was provided
+    if not pdf_file and not pdf_url:
+        return JSONResponse({"message": "No PDF link or file was provided."}, status_code=400)
+
+    # Handle file upload
     if pdf_file:
         if pdf_file.content_type != "application/pdf":
             return JSONResponse(status_code=400, content={"message": "Only PDF files are allowed."})
@@ -42,24 +45,15 @@ async def upload_pdf(
             processed_text = process_text(cleaned_text)
             json_text = strip_non_json(processed_text)
 
-            # Return extracted text in response
-            #return {"filename": file.filename, "processed_text": extracted_text}
-            #return {"filename": file.filename, "processed_text": cleaned_text}
-            #return {"filename": file.filename, "processed_text": processed_text}
-            # #return {"filename": file.filename, "processed_text": json_text}
-    
             return json.loads(json_text)
-            #return {"filename": file.filename, "processed_text": json.loads(json_text)}        
 
         except Exception as e:
             logging.exception(f"Error processing the PDF file: {e}")  # Enhanced logging
-            return JSONResponse(status_code=500, content={"message": "Failed to extract text from the PDF.", "error": str(e)})  # Include error details
+            return JSONResponse(status_code=500, content={"message": "Failed to extract text from the PDF.", "error": str(e)})
 
-    # Check if a URL was provided
+    # Handle PDF URL processing
     if pdf_url:
         return JSONResponse({"message": "You provided a PDF link.", "pdf_url": pdf_url})
-
-    return JSONResponse({"message": "No PDF link or file was provided."})
 
 def extract_text_from_pdf(pdf_file_content: bytes) -> str:
     try:
