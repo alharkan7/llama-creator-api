@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, Form
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.responses import JSONResponse
 
 import os
@@ -92,24 +92,23 @@ def extract_text_from_pdf(pdf_file_content: bytes) -> str:
 
 def extract_text_from_pdf_url(pdf_url: str) -> str:
     try:
-        # Download the PDF content from the URL
         response = requests.get(pdf_url)
-        response.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
+        response.raise_for_status()
 
-        # Check content type to confirm it's a PDF
         if 'application/pdf' not in response.headers.get('Content-Type', ''):
             raise ValueError("URL does not point to a valid PDF file.")
 
-        # Extract text using the existing function
         return extract_text_from_pdf(response.content)
 
     except requests.exceptions.RequestException as e:
         logging.error(f"Failed to download PDF from URL: {pdf_url} - {e}")
-        raise Exception("Error downloading the PDF from the URL.")
+        raise HTTPException(status_code=400, detail="Error downloading the PDF from the URL.")
+    except ValueError as e:
+        logging.error(f"Invalid PDF URL: {pdf_url} - {e}")
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logging.error(f"Failed to extract text from the PDF URL: {pdf_url} - {e}")
-        raise Exception("Error extracting text from PDF URL.")
-    
+        raise HTTPException(status_code=500, detail="Error extracting text from PDF URL.")
 
 def cleanup_text(text):
     # Remove excessive whitespace
