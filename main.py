@@ -88,6 +88,35 @@ def cleanup_text(text):
     
     return cleanup_text
 
+def strip_non_json(text):
+    # Find the first occurrence of '{'
+    start = text.find('{')
+    # Find the last occurrence of '}'
+    end = text.rfind('}')
+    
+    if start != -1 and end != -1:
+        # Extract the potential JSON content
+        json_text = text[start:end+1]
+        
+        # Remove any leading/trailing whitespace
+        json_text = json_text.strip()
+        
+        # Attempt to parse the JSON
+        try:
+            json_obj = json.loads(json_text)
+            return json.dumps(json_obj, indent=2)  # Return formatted JSON string
+        except json.JSONDecodeError:
+            # If parsing fails, try to clean up the text further
+            # Remove any non-JSON characters (keeping only {}, [], :, ",, and whitespace)
+            cleaned_text = re.sub(r'[^\{\}\[\]:,".\s\w]', '', json_text)
+            try:
+                json_obj = json.loads(cleaned_text)
+                return json.dumps(json_obj, indent=2)  # Return formatted JSON string
+            except json.JSONDecodeError:
+                return "Error: Unable to extract valid JSON from the response."
+    else:
+        return "Error: No JSON-like structure found in the response."
+
 def process_text(cleaned_text: str) -> str:
     client = Groq(
     api_key=os.getenv("GROQ_API_KEY"),
@@ -99,34 +128,35 @@ def process_text(cleaned_text: str) -> str:
             {
                 "role": "user",
                 "content": f"""
-                I have a scientific paper that has been extracted from a PDF using PyPDF2. It is a bit messy, so you must clean it up and make it readable.
-                Then I want to turn it into a series of engaging, easy-to-understand text chunks for a layman audience on social media.
-                Each chunk should be brief and suitable for being read on a card that people can swipe through, like on TikTok.
-                
-                Here's how I want you to break down the content:
-                - Hook: Identify the most interesting finding or surprising fact from the paper and summarize it in a catchy, attention-grabbing way to draw people in.
-                - Research Problem or Question: Summarize the main problem or research question the paper addresses. Keep it simple and relatable.
-                - Researcher and Institution: Provide a short introduction to the scientist(s) who conducted the research, or mention the institution they are affiliated with.
-                - Research Method: Briefly explain what the researchers did to conduct the study. Keep it straightforward and avoid technical jargon.
-                - Findings: Summarize the key findings of the research in a way that highlights their significance.
-                - Implications: Explain why these findings matter. What impact could they have on people's lives, society, or future research?
-                - Engagement Bait: End with a question or a call to action to encourage audience engagement, such as commenting their thoughts, sharing the content, or asking questions.
-                
-                Make sure each chunk is concise and suitable for a non-scientific audience. Use simple language and keep each chunk to no more than two sentences.
-                You must return all the text in readable format, no markdown, no code, no special characters.
-                You MUST only return the output in JSON format with the following template:
-                
-                    "hook": "...",
-                    "question": "...",
-                    "researcher": "...",
-                    "method": "...",
-                    "findings": "...",
-                    "implications": "...",
-                    "closing": "..."
-                                
-                Here is the text of the scientific paper: {cleaned_text}
+                Analyze the following scientific paper and create a series of engaging, easy-to-understand text chunks for a layman audience on social media. Return the output ONLY as a JSON object with the following structure:
 
-                I repeat. Only return in JSON format, no intro like "Here is the output" or "Here is the answer" or anything like that.               
+                {{
+                    "hook": "string",
+                    "question": "string",
+                    "researcher": "string",
+                    "method": "string",
+                    "findings": "string",
+                    "implications": "string",
+                    "closing": "string"
+                }}
+
+                Guidelines:
+                - Each field should contain brief, concise content suitable for social media cards (like TikTok).
+                - Use simple language for a non-scientific audience.
+                - Limit each chunk to no more than two sentences.
+                - Do not use markdown, code blocks, or special characters.
+                - "hook": Summarize the most interesting finding or surprising fact to grab attention.
+                - "question": Summarize the main research question simply and relatably.
+                - "researcher": Briefly introduce the scientist(s) or their institution.
+                - "method": Explain the study's method without technical jargon.
+                - "findings": Summarize key results, highlighting their significance.
+                - "implications": Explain the potential impact on people, society, or future research.
+                - "closing": End with a question or call to action to encourage engagement.
+
+                Scientific paper text:
+                {cleaned_text}
+
+                Remember: Respond ONLY with the JSON object. No introductory text, no explanations outside the JSON structure.               
                 """
             }
         ],
@@ -141,7 +171,7 @@ def process_text(cleaned_text: str) -> str:
     for chunk in completion:
         response_text += chunk.choices[0].delta.content or ""
 
-    return response_text
+    return strip_non_json(response_text)
 
 
 if __name__ == "__main__":
