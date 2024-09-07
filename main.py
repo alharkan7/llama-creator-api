@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, Form
+from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 
 import os
@@ -13,51 +13,37 @@ import re
 import PyPDF2
 from groq import Groq
 
-import requests
-from io import BytesIO
-from typing import Optional
 
 
 app = FastAPI()
 
 @app.post("/upload-pdf/")
-async def upload_pdf(file: UploadFile = File(None), url: str = Form(None)):
-    try:
-        pdf_file_content = None
-        
-        # If a file is uploaded, process it
-        if file:
-            if file.content_type != "application/pdf":
-                return JSONResponse(status_code=400, content={"message": "Only PDF files are allowed."})
-            
-            pdf_file_content = await file.read()
+async def upload_pdf(file: UploadFile = File(...)):
+    if file.content_type != "application/pdf":
+        return JSONResponse(status_code=400, content={"message": "Only PDF files are allowed."})
 
-        # If a URL is provided, download the PDF from the URL
-        elif url:
-            try:
-                response = requests.get(url)
-                if response.headers['Content-Type'] != 'application/pdf':
-                    return JSONResponse(status_code=400, content={"message": "The provided URL does not link to a PDF file."})
-                pdf_file_content = response.content
-            except Exception as e:
-                logging.exception(f"Error downloading PDF from URL: {e}")
-                return JSONResponse(status_code=400, content={"message": "Failed to download PDF from URL.", "error": str(e)})
-        
-        # If neither file nor URL is provided
-        else:
-            return JSONResponse(status_code=400, content={"message": "Either a PDF file or a valid URL must be provided."})
-        
-        # Proceed to extract and process the PDF content
+    try:
+        # Read the uploaded PDF file into memory
+        pdf_file_content = await file.read()
+
         extracted_text = extract_text_from_pdf(pdf_file_content)
+
         cleaned_text = cleanup_text(extracted_text)
+
         processed_text = process_text(cleaned_text)
+
         json_text = strip_non_json(processed_text)
 
-        return {"processed_text": json_text}
-    
+        # Return extracted text in response
+        #return {"filename": file.filename, "processed_text": extracted_text}
+        #return {"filename": file.filename, "processed_text": cleaned_text}
+        #return {"filename": file.filename, "processed_text": processed_text}
+        return {"filename": file.filename, "processed_text": json_text}    
+        
+
     except Exception as e:
-        logging.exception(f"Error processing the PDF: {e}")
-        return JSONResponse(status_code=500, content={"message": "Failed to process the PDF.", "error": str(e)})
+        logging.exception(f"Error processing the PDF file: {e}")  # Enhanced logging
+        return JSONResponse(status_code=500, content={"message": "Failed to extract text from the PDF.", "error": str(e)})  # Include error details
 
 def extract_text_from_pdf(pdf_file_content: bytes) -> str:
     try:
@@ -158,7 +144,7 @@ def process_text(cleaned_text: str) -> str:
                 }}
 
                 Guidelines:
-                - Each field should contain brief, concise content of around 2 sentences, suitable for social media cards (like TikTok).
+                - Each field should contain engaging short content suitable for social media cards (like TikTok).
                 - Use simple language for a non-scientific audience.
                 - Do not use markdown, code blocks, or special characters.
                 - "hook": Summarize the most interesting finding or surprising fact to grab attention. For example, "Did you know that the study found that the average person spends 10 hours a week on social media?"
