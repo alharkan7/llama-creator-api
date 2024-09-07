@@ -4,4 +4,3 @@ python-multipart
 requests
 PyPDF2
 groq
-urllib.request
