@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import JSONResponse
 
 import os
@@ -10,42 +10,56 @@ import json
 import zipfile
 import re
 
+from typing import Optional
+from pydantic import BaseModel
+
 import PyPDF2
 from groq import Groq
 
-
-
 app = FastAPI()
 
+# Define the model for receiving a PDF URL
+class PDFLink(BaseModel):
+    url: Optional[str] = None
+
+
 @app.post("/upload-pdf/")
-async def upload_pdf(file: UploadFile = File(...)):
-    if file.content_type != "application/pdf":
-        return JSONResponse(status_code=400, content={"message": "Only PDF files are allowed."})
+async def upload_pdf(
+    pdf_file: Optional[UploadFile] = File(None), 
+    pdf_url: Optional[str] = Form(None)
+):
+    
+    # Check if a file was uploaded
+    if pdf_file:
+        if pdf_file.content_type != "application/pdf":
+            return JSONResponse(status_code=400, content={"message": "Only PDF files are allowed."})
 
-    try:
-        # Read the uploaded PDF file into memory
-        pdf_file_content = await file.read()
+        try:
+            # Read the uploaded PDF file into memory
+            pdf_file_content = await pdf_file.read()
+            extracted_text = extract_text_from_pdf(pdf_file_content)
+            cleaned_text = cleanup_text(extracted_text)
+            processed_text = process_text(cleaned_text)
+            json_text = strip_non_json(processed_text)
 
-        extracted_text = extract_text_from_pdf(pdf_file_content)
+            # Return extracted text in response
+            #return {"filename": file.filename, "processed_text": extracted_text}
+            #return {"filename": file.filename, "processed_text": cleaned_text}
+            #return {"filename": file.filename, "processed_text": processed_text}
+            # #return {"filename": file.filename, "processed_text": json_text}
+    
+            return json.loads(json_text)
+            #return {"filename": file.filename, "processed_text": json.loads(json_text)}        
 
-        cleaned_text = cleanup_text(extracted_text)
+        except Exception as e:
+            logging.exception(f"Error processing the PDF file: {e}")  # Enhanced logging
+            return JSONResponse(status_code=500, content={"message": "Failed to extract text from the PDF.", "error": str(e)})  # Include error details
 
-        processed_text = process_text(cleaned_text)
+    # Check if a URL was provided
+    if pdf_url:
+        return JSONResponse({"message": "You provided a PDF link.", "pdf_url": pdf_url})
 
-        json_text = strip_non_json(processed_text)
-
-        # Return extracted text in response
-        #return {"filename": file.filename, "processed_text": extracted_text}
-        #return {"filename": file.filename, "processed_text": cleaned_text}
-        #return {"filename": file.filename, "processed_text": processed_text}
-        # #return {"filename": file.filename, "processed_text": json_text}
-   
-        return json.loads(json_text)
-        #return {"filename": file.filename, "processed_text": json.loads(json_text)}        
-
-    except Exception as e:
-        logging.exception(f"Error processing the PDF file: {e}")  # Enhanced logging
-        return JSONResponse(status_code=500, content={"message": "Failed to extract text from the PDF.", "error": str(e)})  # Include error details
+    return JSONResponse({"message": "No PDF link or file was provided."})
 
 def extract_text_from_pdf(pdf_file_content: bytes) -> str:
     try:
