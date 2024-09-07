@@ -144,17 +144,16 @@ def process_text(cleaned_text: str) -> str:
                 }}
 
                 Guidelines:
-                - Each field should contain brief, concise content suitable for social media cards (like TikTok).
+                - Each field should contain brief, concise content of around 2 sentences, suitable for social media cards (like TikTok).
                 - Use simple language for a non-scientific audience.
-                - Limit each chunk to no more than two sentences.
                 - Do not use markdown, code blocks, or special characters.
-                - "hook": Summarize the most interesting finding or surprising fact to grab attention.
-                - "question": Summarize the main research question simply and relatably.
-                - "researcher": Briefly introduce the scientist(s) or their institution.
-                - "method": Explain the study's method without technical jargon.
-                - "findings": Summarize key results, highlighting their significance.
-                - "implications": Explain the potential impact on people, society, or future research.
-                - "closing": End with a question or call to action to encourage engagement.
+                - "hook": Summarize the most interesting finding or surprising fact to grab attention. For example, "Did you know that the study found that the average person spends 10 hours a week on social media?"
+                - "question": Summarize the main research question simply and relatably. For example, "What are the effects of social media on mental health?"  
+                - "researcher": Briefly introduce the scientist(s) or their institution. For example, "The study was conducted by researchers at the University of California, Los Angeles."
+                - "method": Explain the study's method without technical jargon. For example, "The study used a sample of 1,000 participants and was conducted over a period of 12 months."
+                - "findings": Summarize key results, highlighting their significance. For example, "The study found that the average person spends 10 hours a week on social media."
+                - "implications": Explain the potential impact on people, society, or future research. For example, "The study has implications for understanding the impact of social media on mental health."
+                - "closing": End with a question or call to action to encourage engagement. For example, "What are your thoughts on the study? Do you think it's important to understand the impact of social media on mental health?"
 
                 Scientific paper text:
                 {cleaned_text}
