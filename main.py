@@ -26,14 +26,17 @@ async def upload_pdf(file: UploadFile = File(...)):
         # Read the uploaded PDF file into memory
         pdf_file_content = await file.read()
 
-        # Call Adobe PDF API to extract text
         extracted_text = extract_text_from_pdf(pdf_file_content)
 
-        processed_text = process_text(extracted_text)
+        cleaned_text = cleanup_text(extracted_text)
+
+        processed_text = process_text(cleaned_text)
 
         # Return extracted text in response
-        return {"filename": file.filename, "processed_text": processed_text}
-        # return {"filename": file.filename, "processed_text": extracted_text}
+        #return {"filename": file.filename, "processed_text": extracted_text}
+        return {"filename": file.filename, "processed_text": cleaned_text}
+        #return {"filename": file.filename, "processed_text": processed_text}
+        
 
     except Exception as e:
         logging.exception(f"Error processing the PDF file: {e}")  # Enhanced logging
@@ -59,33 +62,36 @@ def extract_text_from_pdf(pdf_file_content: bytes) -> str:
         logging.exception(f'Error while extracting text from PDF: {e}')
         raise Exception("Error extracting text from PDF")
 
-def process_text(extracted_text: str) -> str:
+def cleanup_text(text):
+    # Remove excessive whitespace
+    text = re.sub(r'\s+', ' ', text)
+    
+    # Split into paragraphs (assuming paragraphs are separated by double newlines)
+    paragraphs = text.split('\n\n')
+    
+    # Process each paragraph
+    processed_paragraphs = []
+    for para in paragraphs:
+        # Remove leading/trailing whitespace
+        para = para.strip()
+        
+        # Rejoin hyphenated words
+        para = re.sub(r'(\w+)-\s*\n\s*(\w+)', r'\1\2', para)
+        
+        # Add proper line breaks (e.g., after periods, question marks, exclamation marks)
+        para = re.sub(r'([.!?])\s+', r'\1\n', para)
+        
+        processed_paragraphs.append(para)
+    
+    # Join paragraphs with double newlines
+    cleanup_text = '\n\n'.join(processed_paragraphs)
+    
+    return cleanup_text
+
+def process_text(cleaned_text: str) -> str:
     client = Groq(
     api_key=os.getenv("GROQ_API_KEY"),
     )
-
-    # Replace multiple newlines with one newline to avoid broken paragraphs
-    extracted_text = re.sub(r'\n+', '\n', extracted_text)
-    
-    # Remove spaces around newlines (from markdown-style bullets, etc.)
-    extracted_text = re.sub(r' \n', '\n', extracted_text)
-    extracted_text = re.sub(r'\n ', '\n', extracted_text)
-
-    # Remove common markdown-like artifacts (like '*' or '•')
-    extracted_text = re.sub(r'[*•]', '', extracted_text)
-
-    # Remove double spaces and tabs
-    extracted_text = re.sub(r'\t+', ' ', extracted_text)
-    extracted_text = re.sub(r' +', ' ', extracted_text)
-
-    # Handle word hyphenation at the end of lines (e.g., "exam-\nple" -> "example")
-    extracted_text = re.sub(r'(\w+)-\n(\w+)', r'\1\2', extracted_text)
-
-    # Remove any excessive newlines for readability (e.g., collapse multiple empty lines)
-    extracted_text = re.sub(r'\n{2,}', '\n\n', extracted_text)
-
-    # Strip leading and trailing whitespaces from the final text
-    extracted_text = extracted_text.strip()
 
     completion = client.chat.completions.create(
         model="llama3-8b-8192",
@@ -118,7 +124,7 @@ def process_text(extracted_text: str) -> str:
                     "implications": "...",
                     "closing": "..."
                                 
-                Here is the text of the scientific paper: {extracted_text}
+                Here is the text of the scientific paper: {cleaned_text}
 
                 I repeat. Only return in JSON format, no intro like "Here is the output" or "Here is the answer" or anything like that.               
                 """
