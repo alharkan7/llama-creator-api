@@ -12,6 +12,7 @@ import re
 
 from typing import Optional
 from pydantic import BaseModel
+import requests
 
 import PyPDF2
 from groq import Groq
@@ -53,7 +54,21 @@ async def upload_pdf(
 
     # Handle PDF URL processing
     if pdf_url:
-        return JSONResponse({"message": "You provided a PDF link.", "pdf_url": pdf_url})
+        # return JSONResponse({"message": "You provided a PDF link.", "pdf_url": pdf_url})
+
+        try:
+            # Read the uploaded PDF file into memory
+            pdf_file_content = extract_text_from_pdf_url(pdf_url)
+            extracted_text = extract_text_from_pdf(pdf_file_content)
+            cleaned_text = cleanup_text(extracted_text)
+            processed_text = process_text(cleaned_text)
+            json_text = strip_non_json(processed_text)
+
+            return json.loads(json_text)
+
+        except Exception as e:
+            logging.exception(f"Error processing the PDF file: {e}")  # Enhanced logging
+            return JSONResponse(status_code=500, content={"message": "Failed to extract text from the PDF.", "error": str(e)})
 
 def extract_text_from_pdf(pdf_file_content: bytes) -> str:
     try:
@@ -74,6 +89,19 @@ def extract_text_from_pdf(pdf_file_content: bytes) -> str:
     except Exception as e:
         logging.exception(f'Error while extracting text from PDF: {e}')
         raise Exception("Error extracting text from PDF")
+
+def extract_text_from_pdf_url(pdf_url: str) -> str:
+    try:
+        # Download the PDF content from the URL
+        response = requests.get(pdf_url)
+        response.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
+
+        # Extract text using the existing function
+        return extract_text_from_pdf(response.content)
+
+    except Exception as e:
+        logging.exception(f'Error while extracting text from PDF URL: {e}')
+        raise Exception("Error extracting text from PDF URL")
 
 def cleanup_text(text):
     # Remove excessive whitespace
