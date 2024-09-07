@@ -40,8 +40,8 @@ async def upload_pdf(file: UploadFile = File(...)):
         #return {"filename": file.filename, "processed_text": processed_text}
         # #return {"filename": file.filename, "processed_text": json_text}
    
-        #return json.loads(json_text)
-        return {"filename": file.filename, "processed_text": json.loads(json_text)}        
+        return json.loads(json_text)
+        #return {"filename": file.filename, "processed_text": json.loads(json_text)}        
 
     except Exception as e:
         logging.exception(f"Error processing the PDF file: {e}")  # Enhanced logging
