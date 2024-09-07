@@ -207,7 +207,7 @@ def process_text(cleaned_text: str) -> str:
             }
         ],
         temperature=1,
-        max_tokens=15000,
+        max_tokens=8000,
         top_p=1,
         stream=True,
         stop=None,
