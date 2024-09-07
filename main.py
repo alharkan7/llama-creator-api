@@ -58,8 +58,7 @@ async def upload_pdf(
 
         try:
             # Read the uploaded PDF file into memory
-            pdf_file_content = extract_text_from_pdf_url(pdf_url)
-            extracted_text = extract_text_from_pdf(pdf_file_content)
+            extracted_text = extract_text_from_pdf_url(pdf_url)
             cleaned_text = cleanup_text(extracted_text)
             processed_text = process_text(cleaned_text)
             json_text = strip_non_json(processed_text)
