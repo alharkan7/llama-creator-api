@@ -32,10 +32,13 @@ async def upload_pdf(file: UploadFile = File(...)):
 
         processed_text = process_text(cleaned_text)
 
+        json_text = strip_non_json(processed_text)
+
         # Return extracted text in response
         #return {"filename": file.filename, "processed_text": extracted_text}
-        return {"filename": file.filename, "processed_text": cleaned_text}
+        #return {"filename": file.filename, "processed_text": cleaned_text}
         #return {"filename": file.filename, "processed_text": processed_text}
+        #return {"filename": file.filename, "processed_text": json_text}    
         
 
     except Exception as e:
@@ -171,7 +174,7 @@ def process_text(cleaned_text: str) -> str:
     for chunk in completion:
         response_text += chunk.choices[0].delta.content or ""
 
-    return strip_non_json(response_text)
+    return response_text
 
 
 if __name__ == "__main__":
