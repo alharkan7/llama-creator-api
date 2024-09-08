@@ -6,5 +6,3 @@ PyPDF2
 groq
 pydantic
 requests
-transformers
-sentencepiece

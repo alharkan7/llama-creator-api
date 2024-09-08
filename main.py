@@ -4,7 +4,6 @@ from fastapi.responses import JSONResponse
 import os
 from datetime import datetime
 import io
-from textwrap import wrap
 
 import logging
 import json
@@ -17,7 +16,7 @@ import requests
 
 import PyPDF2
 from groq import Groq
-from transformers import LlamaTokenizer
+from textwrap import wrap
 
 
 app = FastAPI()
@@ -168,31 +167,13 @@ def strip_non_json(text):
         return "Error: No JSON-like structure found in the response."
 
 def process_text(cleaned_text: str) -> str:
-
-    tokenizer = LlamaTokenizer.from_pretrained(
-        'meta-llama/Meta-Llama-3-8B', 
-        cache_dir='/tmp/huggingface'
-    )
-
     client = Groq(
     api_key=os.getenv("GROQ_API_KEY"),
     )
 
-    # Tokenize the entire text
-    tokens = tokenizer.encode(cleaned_text)
-
-    # Define max token limit per chunk (adjust if necessary for other tokens in the request)
-    max_chunk_tokens = 6000  # Stay under 8000 to leave room for the response
-
-    # Split the tokens into smaller chunks
-    chunks = [tokens[i:i + max_chunk_tokens] for i in range(0, len(tokens), max_chunk_tokens)]
-
-    def process_chunk(chunk_tokens: list) -> dict:
-        # Decode the chunk of tokens back into text
-        chunk_text = tokenizer.decode(chunk_tokens)
-        
+    def process_chunk(chunk: str) -> dict:
         completion = client.chat.completions.create(
-            model="llama3-8b-8192",
+            model="llama-3.1-70b-versatile",
             messages=[
                 {
                     "role": "user",
@@ -222,7 +203,7 @@ def process_text(cleaned_text: str) -> str:
                     - "closing": End with a question or call to action to encourage engagement. For example, "What are your thoughts on the study? Do you think it's important to understand the impact of social media on mental health?"
 
                     Scientific paper text:
-                    {chunk_text}
+                    {chunk}
 
                     Remember: Respond ONLY with the JSON object. No introductory text, no explanations outside the JSON structure.               
                     """
@@ -240,15 +221,20 @@ def process_text(cleaned_text: str) -> str:
             response_text += chunk.choices[0].delta.content or ""
 
         return response_text
-    
+
+    # Split the text into smaller chunks
+    chunks = wrap(cleaned_text, width=40000)  # Adjust chunk size based on token limits
     results = []
-    for chunk_tokens in chunks:
-        result = process_chunk(chunk_tokens)
+
+    for chunk in chunks:
+        result = process_chunk(chunk)
         results.append(result)
 
+    # Combine results into a single JSON object (this will depend on your exact needs)
     combined_result = combine_results(results)
-
+    
     return combined_result
+
 
 def combine_results(results: list) -> str:
     combined_result = {
@@ -278,7 +264,6 @@ def combine_results(results: list) -> str:
     combined_result = {key: value.strip() for key, value in combined_result.items()}
     
     return json.dumps(combined_result)  # Convert dictionary back to JSON string
-
 
 
 if __name__ == "__main__":
