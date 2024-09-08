@@ -170,7 +170,7 @@ def strip_non_json(text):
 def process_text(cleaned_text: str) -> str:
 
     # Load the Llama tokenizer from Hugging Face
-    tokenizer = LlamaTokenizer.from_pretrained("meta-llama/llama3-8b-8192")  # Use the specific Llama model you're working with
+    tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B")  # Use the specific Llama model you're working with
 
     client = Groq(
     api_key=os.getenv("GROQ_API_KEY"),
