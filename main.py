@@ -1,5 +1,7 @@
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+
 
 import os
 from datetime import datetime
@@ -19,12 +21,27 @@ from groq import Groq
 from textwrap import wrap
 
 
+
+
 app = FastAPI()
 
 # Define the model for receiving a PDF URL
 class PDFLink(BaseModel):
     url: Optional[str] = None
 
+# Define allowed origins
+allowed_origins = [
+   "https://llama-creator-git-llama-creator-dev-alharkan7s-projects.vercel.app/",
+   "https://llama-creator.vercel.app/"# Replace with your actual frontend URL
+]
+
+app.add_middleware(
+   CORSMiddleware,
+   allow_origins=allowed_origins,  # Allows specific origins
+   allow_credentials=True,
+   allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
+   allow_headers=["*"],  # Allows all headers
+)
 
 @app.post("/upload-pdf/")
 async def upload_pdf(
