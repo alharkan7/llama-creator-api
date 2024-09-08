@@ -7,3 +7,4 @@ groq
 pydantic
 requests
 transformers
+sentencepiece
