@@ -31,8 +31,9 @@ class PDFLink(BaseModel):
 
 # Define allowed origins
 allowed_origins = [
-   "https://llama-creator-git-llama-creator-dev-alharkan7s-projects.vercel.app/",
-   "https://llama-creator.vercel.app/"# Replace with your actual frontend URL
+    "https://llama-creator-git-llama-creator-dev-alharkan7s-projects.vercel.app/",
+    "https://llama-creator.vercel.app/",
+    "https://8vysdc-3000.csb.app/",# Replace with your actual frontend URL
 ]
 
 app.add_middleware(
