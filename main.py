@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 import os
 from datetime import datetime
 import io
+from textwrap import wrap
 
 import logging
 import json
@@ -169,55 +170,99 @@ def process_text(cleaned_text: str) -> str:
     api_key=os.getenv("GROQ_API_KEY"),
     )
 
-    completion = client.chat.completions.create(
-        model="llama-3.1-70b-versatile",
-        messages=[
-            {
-                "role": "user",
-                "content": f"""
-                Analyze the following scientific paper and create a series of engaging, easy-to-understand text chunks for a layman audience on social media. Return the output ONLY as a JSON object with the following structure:
+    def process_chunk(chunk: str) -> str:
+        completion = client.chat.completions.create(
+            model="llama3-8b-8192",
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"""
+                    Analyze the following scientific paper and create a series of engaging, easy-to-understand text chunks for a layman audience on social media. Return the output ONLY as a JSON object with the following structure:
 
-                {{
-                    "hook": "string",
-                    "question": "string",
-                    "researcher": "string",
-                    "method": "string",
-                    "findings": "string",
-                    "implications": "string",
-                    "closing": "string"
-                }}
+                    {{
+                        "hook": "string",
+                        "question": "string",
+                        "researcher": "string",
+                        "method": "string",
+                        "findings": "string",
+                        "implications": "string",
+                        "closing": "string"
+                    }}
 
-                Guidelines:
-                - Each field should contain engaging short content suitable for social media cards (like TikTok).
-                - Use simple language for a non-scientific audience.
-                - Do not use markdown, code blocks, or special characters.
-                - "hook": Summarize the most interesting finding or surprising fact to grab attention. For example, "Did you know that the study found that the average person spends 10 hours a week on social media?"
-                - "question": Summarize the main research question simply and relatably. For example, "What are the effects of social media on mental health?"  
-                - "researcher": Briefly introduce the scientist(s) or their institution. For example, "The study was conducted by researchers at the University of California, Los Angeles."
-                - "method": Explain the study's method without technical jargon. For example, "The study used a sample of 1,000 participants and was conducted over a period of 12 months."
-                - "findings": Summarize key results, highlighting their significance. For example, "The study found that the average person spends 10 hours a week on social media."
-                - "implications": Explain the potential impact on people, society, or future research. For example, "The study has implications for understanding the impact of social media on mental health."
-                - "closing": End with a question or call to action to encourage engagement. For example, "What are your thoughts on the study? Do you think it's important to understand the impact of social media on mental health?"
+                    Guidelines:
+                    - Each field should contain engaging short content suitable for social media cards (like TikTok).
+                    - Use simple language for a non-scientific audience.
+                    - Do not use markdown, code blocks, or special characters.
+                    - "hook": Summarize the most interesting finding or surprising fact to grab attention. For example, "Did you know that the study found that the average person spends 10 hours a week on social media?"
+                    - "question": Summarize the main research question simply and relatably. For example, "What are the effects of social media on mental health?"  
+                    - "researcher": Briefly introduce the scientist(s) or their institution. For example, "The study was conducted by researchers at the University of California, Los Angeles."
+                    - "method": Explain the study's method without technical jargon. For example, "The study used a sample of 1,000 participants and was conducted over a period of 12 months."
+                    - "findings": Summarize key results, highlighting their significance. For example, "The study found that the average person spends 10 hours a week on social media."
+                    - "implications": Explain the potential impact on people, society, or future research. For example, "The study has implications for understanding the impact of social media on mental health."
+                    - "closing": End with a question or call to action to encourage engagement. For example, "What are your thoughts on the study? Do you think it's important to understand the impact of social media on mental health?"
 
-                Scientific paper text:
-                {cleaned_text}
+                    Scientific paper text:
+                    {cleaned_text}
 
-                Remember: Respond ONLY with the JSON object. No introductory text, no explanations outside the JSON structure.               
-                """
-            }
-        ],
-        temperature=1,
-        max_tokens=8000,
-        top_p=1,
-        stream=True,
-        stop=None,
-    )
+                    Remember: Respond ONLY with the JSON object. No introductory text, no explanations outside the JSON structure.               
+                    """
+                }
+            ],
+            temperature=1,
+            max_tokens=8000,
+            top_p=1,
+            stream=True,
+            stop=None,
+        )
 
-    response_text = ""
-    for chunk in completion:
-        response_text += chunk.choices[0].delta.content or ""
+        response_text = ""
+        for chunk in completion:
+            response_text += chunk.choices[0].delta.content or ""
 
-    return response_text
+        return response_text
+    
+    # Split the text into smaller chunks
+    chunks = wrap(cleaned_text, width=2000)  # Adjust chunk size based on token limits
+    results = []
+
+    for chunk in chunks:
+        result = process_chunk(chunk)
+        results.append(result)
+
+    # Combine results into a single JSON object (this will depend on your exact needs)
+    combined_result = combine_results(results)
+    
+    return combined_result
+
+def combine_results(results: list) -> str:
+    combined_result = {
+        "hook": "",
+        "question": "",
+        "researcher": "",
+        "method": "",
+        "findings": "",
+        "implications": "",
+        "closing": ""
+    }
+
+    # Iterate over each result and combine them
+    for result in results:
+        result_json = json.loads(result)  # Convert JSON string to Python dictionary
+        
+        # Combine fields; here we're just concatenating text from each chunk
+        combined_result["hook"] += result_json.get("hook", "") + " "
+        combined_result["question"] += result_json.get("question", "") + " "
+        combined_result["researcher"] += result_json.get("researcher", "") + " "
+        combined_result["method"] += result_json.get("method", "") + " "
+        combined_result["findings"] += result_json.get("findings", "") + " "
+        combined_result["implications"] += result_json.get("implications", "") + " "
+        combined_result["closing"] += result_json.get("closing", "") + " "
+    
+    # Optionally, trim or clean up the combined fields
+    combined_result = {key: value.strip() for key, value in combined_result.items()}
+    
+    return json.dumps(combined_result)  # Convert dictionary back to JSON string
+
 
 
 if __name__ == "__main__":
