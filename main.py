@@ -66,7 +66,8 @@ async def upload_pdf(
             extracted_text = extract_text_from_pdf(pdf_file_content)
             cleaned_text = cleanup_text(extracted_text)
             processed_text = process_text(cleaned_text)
-            json_text = strip_non_json(processed_text)
+            improved_text = improve_text(processed_text)
+            json_text = strip_non_json(improved_text)
 
             return json.loads(json_text)
 
@@ -83,7 +84,8 @@ async def upload_pdf(
             extracted_text = extract_text_from_pdf_url(pdf_url)
             cleaned_text = cleanup_text(extracted_text)
             processed_text = process_text(cleaned_text)
-            json_text = strip_non_json(processed_text)
+            improved_text = improve_text(processed_text)
+            json_text = strip_non_json(improved_text)
 
             return json.loads(json_text)
 
@@ -201,7 +203,7 @@ def process_text(cleaned_text: str) -> str:
                     Analyze the following scientific paper and create a series of engaging, easy-to-understand text chunks for a layman audience on social media. Return the output ONLY as a JSON object with the following structure:
 
                     {{
-                        "hook": "string",
+                        "intro": "string",
                         "question": "string",
                         "researcher": "string",
                         "method": "string",
@@ -214,7 +216,7 @@ def process_text(cleaned_text: str) -> str:
                     - Each field should contain engaging short content suitable for social media cards (like TikTok).
                     - Use simple language for a non-scientific audience.
                     - Do not use markdown, code blocks, or special characters.
-                    - "hook": Summarize the most interesting finding or surprising fact to grab attention. For example, "Did you know that the study found that the average person spends 10 hours a week on social media?"
+                    - "intro": Summarize the most interesting finding or surprising fact to grab attention. For example, "Did you know that the study found that the average person spends 10 hours a week on social media?"
                     - "question": Summarize the main research question simply and relatably. For example, "What are the effects of social media on mental health?"  
                     - "researcher": Briefly introduce the scientist(s) or their institution. For example, "The study was conducted by researchers at the University of California, Los Angeles."
                     - "method": Explain the study's method without technical jargon. For example, "The study used a sample of 1,000 participants and was conducted over a period of 12 months."
@@ -255,10 +257,9 @@ def process_text(cleaned_text: str) -> str:
     
     return combined_result
 
-
 def combine_results(results: list) -> str:
     combined_result = {
-        "hook": "",
+        "intro": "",
         "question": "",
         "researcher": "",
         "method": "",
@@ -272,7 +273,7 @@ def combine_results(results: list) -> str:
         result_json = json.loads(result)  # Convert JSON string to Python dictionary
         
         # Combine fields; here we're just concatenating text from each chunk
-        combined_result["hook"] += result_json.get("hook", "") + " "
+        combined_result["intro"] += result_json.get("intro", "") + " "
         combined_result["question"] += result_json.get("question", "") + " "
         combined_result["researcher"] += result_json.get("researcher", "") + " "
         combined_result["method"] += result_json.get("method", "") + " "
@@ -283,8 +284,52 @@ def combine_results(results: list) -> str:
     # Optionally, trim or clean up the combined fields
     combined_result = {key: value.strip() for key, value in combined_result.items()}
     
-    return json.dumps(combined_result)  # Convert dictionary back to JSON string
+    return combined_result
 
+def improve_text(dict_text: dict):
+    client = Groq(
+    api_key=os.getenv("GROQ_API_KEY"),
+    )
+
+    completion = client.chat.completions.create(
+            model="llama-3.1-70b-versatile",
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"""
+                    You are given a dictionary that contains a summary of a science paper in the following format:
+                    {{
+                        "intro": "string",
+                        "question": "string",
+                        "researcher": "string",
+                        "method": "string",
+                        "findings": "string",
+                        "implications": "string",
+                        "closing": "string"
+                    }}
+
+                    Each value in the dictionary is a string that may contain repetitive or unclear information. Your task is to rewrite and improve these strings to make the summarization clearer, more concise, and suitable for public consumption on social media platforms. The summary should be easy to read, coherent, and avoid redundancy. Do not add any additional information outside the dictionary format.
+
+                    Here is the dictionary:
+                    {dict_text}
+                    
+                    Return only the improved dictionary, with no additional explanation or text outside of it.
+                    
+                    """
+                    }
+            ],
+            temperature=1,
+            max_tokens=8000,
+            top_p=1,
+            stream=True,
+            stop=None,
+        )
+
+    improved_text = ""
+    for chunk in completion:
+        improved_text += chunk.choices[0].delta.content or ""
+
+    return json.dumps(improved_text)
 
 if __name__ == "__main__":
     import uvicorn
