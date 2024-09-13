@@ -6,3 +6,5 @@ PyPDF2
 groq
 pydantic
 requests
+git+https://github.com/adobe/pdfservices-python-sdk.git
+python-docx

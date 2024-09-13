@@ -21,8 +21,6 @@ from groq import Groq
 from textwrap import wrap
 
 
-
-
 app = FastAPI()
 
 # Define the model for receiving a PDF URL
@@ -63,7 +61,7 @@ async def upload_pdf(
         try:
             # Read the uploaded PDF file into memory
             pdf_file_content = await pdf_file.read()
-            extracted_text = extract_text_from_pdf(pdf_file_content)
+            extracted_text = extract_text_from_pdf_adobe(pdf_file_content)
             cleaned_text = cleanup_text(extracted_text)
             processed_text = process_text(cleaned_text)
             improved_text = improve_text(processed_text)
@@ -112,6 +110,73 @@ def extract_text_from_pdf(pdf_file_content: bytes) -> str:
     except Exception as e:
         logging.exception(f'Error while extracting text from PDF: {e}')
         raise Exception("Error extracting text from PDF")
+
+def extract_text_from_pdf_adobe(pdf_file_content: bytes) -> str:
+
+    input_stream = io.BytesIO(pdf_file_content)
+
+    from adobe.pdfservices.operation.auth.service_principal_credentials import ServicePrincipalCredentials
+    from adobe.pdfservices.operation.pdf_services import PDFServices
+    from adobe.pdfservices.operation.pdf_services_media_type import PDFServicesMediaType
+    from adobe.pdfservices.operation.io.cloud_asset import CloudAsset
+    from adobe.pdfservices.operation.io.stream_asset import StreamAsset
+
+    from adobe.pdfservices.operation.pdfjobs.jobs.export_pdf_job import ExportPDFJob
+    from adobe.pdfservices.operation.pdfjobs.params.export_pdf.export_pdf_params import ExportPDFParams
+    from adobe.pdfservices.operation.pdfjobs.params.export_pdf.export_pdf_target_format import ExportPDFTargetFormat
+    from adobe.pdfservices.operation.pdfjobs.result.export_pdf_result import ExportPDFResult
+
+    credentials = ServicePrincipalCredentials(
+        client_id=os.getenv('PDF_SERVICES_CLIENT_ID'),
+        client_secret=os.getenv('PDF_SERVICES_CLIENT_SECRET'))
+
+    # Creates a PDF Services instance
+    pdf_services = PDFServices(credentials=credentials)
+
+    # Creates an asset(s) from source file(s) and upload
+    input_asset = pdf_services.upload(input_stream=input_stream, mime_type=PDFServicesMediaType.PDF)
+
+    # Initialize the logger
+    logging.basicConfig(level=logging.INFO)
+
+    # Create parameters for the job
+    export_pdf_params = ExportPDFParams(target_format=ExportPDFTargetFormat.DOCX)
+
+    # Creates a new job instance
+    export_pdf_job = ExportPDFJob(input_asset=input_asset, export_pdf_params=export_pdf_params)
+
+    # Submit the job and gets the job result
+    location = pdf_services.submit(export_pdf_job)
+    pdf_services_response = pdf_services.get_job_result(location, ExportPDFResult)
+
+    # Get content from the resulting asset(s)
+    result_asset: CloudAsset = pdf_services_response.get_result().get_asset()
+    stream_asset: StreamAsset = pdf_services.get_content(result_asset)
+
+    input_stream_adobe = stream_asset.get_input_stream()
+
+    # Instead of writing to disk, use in-memory buffer
+    output_stream = io.BytesIO(input_stream_adobe)
+
+    # Write the stream content to the in-memory file
+    output_stream.write(stream_asset.get_input_stream())
+
+    # Reset stream position to the beginning
+    output_stream.seek(0)
+
+    from docx import Document
+
+    # Load the .docx content using `python-docx`
+    try:
+        doc = Document(output_stream)
+        # Extract text from the .docx file
+        doc_text = "\n".join([para.text for para in doc.paragraphs])
+        #print(doc_text)  # Or use doc_text as needed
+        return doc_text
+    except Exception as e:
+        logging.exception(f'Error while extracting text from PDF: {e}')
+        raise Exception("Error extracting text from PDF")
+
 
 def extract_text_from_pdf_url(pdf_url: str) -> str:
     try:
