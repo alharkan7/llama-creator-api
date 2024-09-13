@@ -216,12 +216,13 @@ def process_text(cleaned_text: str) -> str:
                     - Each field should contain engaging short content suitable for social media cards (like TikTok).
                     - Use simple language for a non-scientific audience.
                     - Do not use markdown, code blocks, or special characters.
+                    - Make the summary coherent from "intro to "closing", resembling a well-structured narrative or storytelling format.
                     - "intro": Summarize the most interesting finding or surprising fact to grab attention. For example, "Did you know that the study found that the average person spends 10 hours a week on social media?"
-                    - "question": Summarize the main research question simply and relatably. For example, "What are the effects of social media on mental health?"  
-                    - "researcher": Briefly introduce the scientist(s) or their institution. For example, "The study was conducted by researchers at the University of California, Los Angeles."
-                    - "method": Explain the study's method without technical jargon. For example, "The study used a sample of 1,000 participants and was conducted over a period of 12 months."
-                    - "findings": Summarize key results, highlighting their significance. For example, "The study found that the average person spends 10 hours a week on social media."
-                    - "implications": Explain the potential impact on people, society, or future research. For example, "The study has implications for understanding the impact of social media on mental health."
+                    - "question": Summarize the main research question simply and relatably. For example, "The researcher(s) question on what are the effects of social media on mental health?"  
+                    - "researcher": Briefly introduce the scientist(s) or their institution. For example, "This study was conducted by researchers at the University of California, Los Angeles."
+                    - "method": Explain the study's method without technical jargon. For example, "This study used a sample of 1,000 participants and was conducted over a period of 12 months."
+                    - "findings": Summarize key results, highlighting their significance. For example, "Researcher(s) found that the average person spends 10 hours a week on social media."
+                    - "implications": Explain the potential impact on people, society, or future research. For example, "The study can help scientists for understanding the impact of social media on mental health."
                     - "closing": End with a question or call to action to encourage engagement. For example, "What are your thoughts on the study? Do you think it's important to understand the impact of social media on mental health?"
 
                     Scientific paper text:
@@ -297,7 +298,7 @@ def improve_text(dict_text: dict):
                 {
                     "role": "user",
                     "content": f"""
-                    You are given a dictionary that contains a summary of a science paper in the following format:
+                    You are given a dictionary that contains a summary of a science paper for social media publication in the following format:
                     {{
                         "intro": "string",
                         "question": "string",
@@ -308,12 +309,13 @@ def improve_text(dict_text: dict):
                         "closing": "string"
                     }}
 
-                    Each value in the dictionary is a string that may contain repetitive or unclear information. Your task is to rewrite and improve these strings to make the summarization clearer, more concise, and suitable for public consumption on social media platforms. The summary should be easy to read, coherent, and avoid redundancy. Do not add any additional information outside the dictionary format.
-
+                    Your task is to rewrite and improve each section of this summary to ensure that when read sequentially from "intro" to "closing," the information flows smoothly and coherently. The goal is to make the summary engaging and easy to understand, resembling a well-structured narrative or storytelling format. Avoid redundancies, and ensure that each section naturally leads to the next.
+                    
                     Here is the dictionary:
                     {dict_text}
                     
-                    Return only the improved dictionary, with no additional explanation or text outside of it.
+                    Please return only the improved dictionary with the sections rephrased to provide a seamless reading experience, with no additional explanation or text outside of it.
+
                     
                     """
                     }
