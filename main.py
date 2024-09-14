@@ -2,7 +2,6 @@ from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-
 import os
 from datetime import datetime
 import io
@@ -132,35 +131,26 @@ def extract_text_from_pdf_adobe(pdf_file_content: bytes) -> str:
 
     # Creates a PDF Services instance
     pdf_services = PDFServices(credentials=credentials)
-
     # Creates an asset(s) from source file(s) and upload
     input_asset = pdf_services.upload(input_stream=input_stream, mime_type=PDFServicesMediaType.PDF)
-
     # Initialize the logger
     logging.basicConfig(level=logging.INFO)
-
     # Create parameters for the job
     export_pdf_params = ExportPDFParams(target_format=ExportPDFTargetFormat.DOCX)
-
     # Creates a new job instance
     export_pdf_job = ExportPDFJob(input_asset=input_asset, export_pdf_params=export_pdf_params)
-
     # Submit the job and gets the job result
     location = pdf_services.submit(export_pdf_job)
     pdf_services_response = pdf_services.get_job_result(location, ExportPDFResult)
-
     # Get content from the resulting asset(s)
     result_asset: CloudAsset = pdf_services_response.get_result().get_asset()
     stream_asset: StreamAsset = pdf_services.get_content(result_asset)
 
     input_stream_adobe = stream_asset.get_input_stream()
-
     # Instead of writing to disk, use in-memory buffer
     output_stream = io.BytesIO(input_stream_adobe)
-
     # Write the stream content to the in-memory file
     output_stream.write(stream_asset.get_input_stream())
-
     # Reset stream position to the beginning
     output_stream.seek(0)
 
@@ -176,7 +166,6 @@ def extract_text_from_pdf_adobe(pdf_file_content: bytes) -> str:
     except Exception as e:
         logging.exception(f'Error while extracting text from PDF: {e}')
         raise Exception("Error extracting text from PDF")
-
 
 def extract_text_from_pdf_url(pdf_url: str) -> str:
     try:
@@ -223,35 +212,6 @@ def cleanup_text(text):
     cleanup_text = '\n\n'.join(processed_paragraphs)
     
     return cleanup_text
-
-def strip_non_json(text):
-    # Find the first occurrence of '{'
-    start = text.find('{')
-    # Find the last occurrence of '}'
-    end = text.rfind('}')
-    
-    if start != -1 and end != -1:
-        # Extract the potential JSON content
-        json_text = text[start:end+1]
-        
-        # Remove any leading/trailing whitespace
-        json_text = json_text.strip()
-        
-        # Attempt to parse the JSON
-        try:
-            json_obj = json.loads(json_text)
-            return json.dumps(json_obj, indent=2)  # Return formatted JSON string
-        except json.JSONDecodeError:
-            # If parsing fails, try to clean up the text further
-            # Remove any non-JSON characters (keeping only {}, [], :, ",, and whitespace)
-            cleaned_text = re.sub(r'[^\{\}\[\]:,".\s\w]', '', json_text)
-            try:
-                json_obj = json.loads(cleaned_text)
-                return json.dumps(json_obj, indent=2)  # Return formatted JSON string
-            except json.JSONDecodeError:
-                return "Error: Unable to extract valid JSON from the response."
-    else:
-        return "Error: No JSON-like structure found in the response."
 
 def process_text(cleaned_text: str) -> str:
     client = Groq(
@@ -396,7 +356,37 @@ def improve_text(dict_text: dict):
     for chunk in completion:
         improved_text += chunk.choices[0].delta.content or ""
 
-    return json.dumps(improved_text)
+    return improved_text
+
+
+def strip_non_json(text):
+    # Find the first occurrence of '{'
+    start = text.find('{')
+    # Find the last occurrence of '}'
+    end = text.rfind('}')
+    
+    if start != -1 and end != -1:
+        # Extract the potential JSON content
+        json_text = text[start:end+1]
+        
+        # Remove any leading/trailing whitespace
+        json_text = json_text.strip()
+        
+        # Attempt to parse the JSON
+        try:
+            json_obj = json.loads(json_text)
+            return json.dumps(json_obj, indent=2)  # Return formatted JSON string
+        except json.JSONDecodeError:
+            # If parsing fails, try to clean up the text further
+            # Remove any non-JSON characters (keeping only {}, [], :, ",, and whitespace)
+            cleaned_text = re.sub(r'[^\{\}\[\]:,".\s\w]', '', json_text)
+            try:
+                json_obj = json.loads(cleaned_text)
+                return json.dumps(json_obj, indent=2)  # Return formatted JSON string
+            except json.JSONDecodeError:
+                return "Error: Unable to extract valid JSON from the response."
+    else:
+        return "Error: No JSON-like structure found in the response."
 
 if __name__ == "__main__":
     import uvicorn
