@@ -281,7 +281,7 @@ def process_text(cleaned_text: str) -> str:
     # Combine results into a single JSON object (this will depend on your exact needs)
     combined_result = combine_results(results)
     
-    return combined_result
+    return json.dumps(combined_result)
 
 def combine_results(results: list) -> str:
     combined_result = {
@@ -312,7 +312,7 @@ def combine_results(results: list) -> str:
     
     return combined_result
 
-def improve_text(dict_text: dict):
+def improve_text(dict_text):
     client = Groq(
     api_key=os.getenv("GROQ_API_KEY"),
     )
