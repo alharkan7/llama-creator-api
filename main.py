@@ -175,7 +175,7 @@ def extract_text_from_pdf_url(pdf_url: str) -> str:
         if 'application/pdf' not in response.headers.get('Content-Type', ''):
             raise ValueError("URL does not point to a valid PDF file.")
 
-        return extract_text_from_pdf(response.content)
+        return extract_text_from_pdf_adobe(response.content)
 
     except requests.exceptions.RequestException as e:
         logging.error(f"Failed to download PDF from URL: {pdf_url} - {e}")
